@@ -12,7 +12,13 @@ mkdir -p "$HERMES_HOME/skills"
 mkdir -p "$HERMES_HOME/workspace"
 mkdir -p "$HERMES_HOME/logs"
 
-# Write .env - explicitly force WEIXIN_ALLOW_ALL_USERS=true
+# Copy config.yaml into HERMES_HOME if not already there
+if [ ! -f "$HERMES_HOME/config.yaml" ] && [ -f /app/config.yaml ]; then
+    cp /app/config.yaml "$HERMES_HOME/config.yaml"
+    echo "[entrypoint] config.yaml copied to $HERMES_HOME"
+fi
+
+# Write .env - explicitly set WEIXIN_ALLOW_ALL_USERS and DeepSeek key
 cat > "$HERMES_HOME/.env" << ENVEOF
 WEIXIN_ALLOW_ALL_USERS=true
 DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
@@ -23,11 +29,10 @@ WEIXIN_CDN_BASE_URL=${WEIXIN_CDN_BASE_URL:-}
 WEIXIN_DM_POLICY=${WEIXIN_DM_POLICY:-pairing}
 ENVEOF
 
-# Also export so os.environ sees it
+# Also export for subprocesses
 export WEIXIN_ALLOW_ALL_USERS=true
 export GATEWAY_ALLOW_ALL_USERS=true
 
-echo "[entrypoint] .env written with WEIXIN_ALLOW_ALL_USERS=true"
-echo "[entrypoint] Env check: WEIXIN_ALLOW_ALL_USERS=$WEIXIN_ALLOW_ALL_USERS"
+echo "[entrypoint] .env written"
 echo "[entrypoint] Running: hermes gateway run"
 exec hermes gateway run

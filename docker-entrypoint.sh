@@ -12,20 +12,22 @@ mkdir -p "$HERMES_HOME/skills"
 mkdir -p "$HERMES_HOME/workspace"
 mkdir -p "$HERMES_HOME/logs"
 
-# Write env vars from Railway env into .env
-python3 << 'PYEOF'
-import os
-path = os.path.join(os.environ.get('HERMES_HOME', '/data/hermes'), '.env')
-with open(path, 'w') as f:
-    for key in ['DEEPSEEK_API_KEY', 'OPENAI_API_KEY',
-                'WEIXIN_ACCOUNT_ID', 'WEIXIN_TOKEN',
-                'WEIXIN_BASE_URL', 'WEIXIN_CDN_BASE_URL', 'WEIXIN_DM_POLICY',
-                'WEIXIN_ALLOW_ALL_USERS', 'WEIXIN_ALLOWED_USERS']:
-        val = os.environ.get(key, '')
-        if val:
-            f.write(f'{key}={val}\n')
-print(f'.env written to {path}')
-PYEOF
+# Write .env - explicitly force WEIXIN_ALLOW_ALL_USERS=true
+cat > "$HERMES_HOME/.env" << ENVEOF
+WEIXIN_ALLOW_ALL_USERS=true
+DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+WEIXIN_ACCOUNT_ID=${WEIXIN_ACCOUNT_ID:-}
+WEIXIN_TOKEN=${WEIXIN_TOKEN:-}
+WEIXIN_BASE_URL=${WEIXIN_BASE_URL:-}
+WEIXIN_CDN_BASE_URL=${WEIXIN_CDN_BASE_URL:-}
+WEIXIN_DM_POLICY=${WEIXIN_DM_POLICY:-pairing}
+ENVEOF
 
+# Also export so os.environ sees it
+export WEIXIN_ALLOW_ALL_USERS=true
+export GATEWAY_ALLOW_ALL_USERS=true
+
+echo "[entrypoint] .env written with WEIXIN_ALLOW_ALL_USERS=true"
+echo "[entrypoint] Env check: WEIXIN_ALLOW_ALL_USERS=$WEIXIN_ALLOW_ALL_USERS"
 echo "[entrypoint] Running: hermes gateway run"
 exec hermes gateway run
